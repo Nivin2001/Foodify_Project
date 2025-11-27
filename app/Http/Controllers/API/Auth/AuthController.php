@@ -1,139 +1,78 @@
 <?php
+
 namespace App\Http\Controllers\API\Auth;
+
 use App\Http\Controllers\Controller;
-use App\Models\OtpCode;
+use App\Services\AuthService;
+use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\VerifyOtpRequest;
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\ResendOtpRequest;
 use Illuminate\Http\Request;
-use App\Models\User;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
-use Twilio\Rest\Client;
-use Carbon\Carbon;
 
 class AuthController extends Controller
 {
-    // Register
-    public function register(Request $request)
+    protected $authService;
+
+    public function __construct(AuthService $authService)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string',
-            'email' => 'required|email|unique:users',
-            'phone' => 'required|unique:users',
-            'password' => 'required|string|min:6|confirmed',
-        ]);
+        $this->authService = $authService;
+    }
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'password' => Hash::make($request->password),
-        ]);
-
-        // Generate OTP
-        $otp = rand(100000, 999999);
-        OtpCode::create([
-            'user_id' => $user->id,
-            'otp' => $otp,
-            'expires_at' => now()->addMinutes(5),
-        ]);
+    public function register(RegisterRequest $request)
+    {
+        $result = $this->authService->register($request->validated());
 
         return response()->json([
-            'message' => 'User registered successfully. OTP generated.',
-            'user' => $user,
-            'otp' => $otp // فقط للتجربة، لاحقًا أرسل SMS
+            'message' => 'User registered successfully. OTP sent.',
+            'phone' => $result['user']->phone,
+            'otp' => $result['otp'], // للتجربة فقط
         ]);
     }
 
-    // Verify OTP
-    public function verifyOtp(Request $request)
+    public function verifyOtp(VerifyOtpRequest $request)
     {
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'otp' => 'required'
-        ]);
-
-        $otpRecord = OtpCode::where('user_id', $request->user_id)
-            ->where('otp', $request->otp)
-            ->where('used', false)
-            ->where('expires_at', '>', now())
-            ->first();
-
-        if (!$otpRecord) {
-            return response()->json(['message' => 'Invalid or expired OTP'], 422);
+        if ($this->authService->verifyOtp($request->phone, $request->otp)) {
+            return response()->json(['message' => 'Phone verified successfully']);
         }
 
-        // Mark OTP as used
-        $otpRecord->update(['used' => true]);
-
-        // ✅ Update phone_verified_at
-        $user = User::find($otpRecord->user_id);
-        $user->phone_verified_at = now();
-        $user->save();
-
-        return response()->json([
-            'message' => 'Phone verified successfully.'
-        ]);
+        return response()->json(['message' => 'Invalid or expired OTP'], 422);
     }
 
-    // Resend OTP
-    public function resendOtp(Request $request)
+    public function login(LoginRequest $request)
     {
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-        ]);
+        $result = $this->authService->login($request->validated());
 
-        $user = User::findOrFail($request->user_id);
-
-        $otp = rand(100000, 999999);
-        OtpCode::create([
-            'user_id' => $user->id,
-            'otp' => $otp,
-            'expires_at' => now()->addMinutes(5),
-        ]);
-
-        return response()->json([
-            'message' => 'OTP resent successfully.',
-            'otp' => $otp // للتجربة فقط
-        ]);
-    }
-
-    // Login
-    public function login(Request $request)
-    {
-        $request->validate([
-            'email' => 'required_without:phone|email|exists:users,email',
-            'phone' => 'required_without:email|exists:users,phone',
-            'password' => 'required|string',
-        ]);
-
-        $user = User::where('email', $request->email)
-            ->orWhere('phone', $request->phone)
-            ->first();
-
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json(['message' => 'Invalid credentials'], 401);
-        }
-
-        if (!$user->phone_verified_at) {
-            return response()->json(['message' => 'Phone not verified'], 403);
-        }
-
-        $token = $user->createToken('api-token')->plainTextToken;
+        if (!$result) return response()->json(['message' => 'Invalid credentials'], 401);
+        if ($result === 'not_verified') return response()->json(['message' => 'Phone not verified'], 403);
 
         return response()->json([
             'message' => 'Login successful',
-            'token' => $token,
-            'user' => $user
+            'token' => $result['token'],
+            'user' => $result['user'],
         ]);
     }
 
-    // Logout
-    public function logout(Request $request)
+    public function resendOtp(ResendOtpRequest $request)
     {
-        $request->user()->currentAccessToken()->delete();
-        return response()->json(['message' => 'Logged out successfully']);
+        $otp = $this->authService->resendOtp($request->phone);
+
+        return response()->json([
+            'message' => 'OTP resent successfully',
+            'otp' => $otp, // للتجربة فقط
+        ]);
     }
+
+    public function profile(Request $request)
+{
+    $user = $this->authService->profile($request->user());
+    return response()->json($user);
+}
+
+public function logout(Request $request)
+{
+    $this->authService->logout($request->user());
+    return response()->json(['message' => 'Logged out successfully']);
+}
+
 }
