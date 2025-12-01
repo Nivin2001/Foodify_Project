@@ -12,12 +12,13 @@ class DishResource extends JsonResource
      *
      * @return array<string, mixed>
      */
+
     public function toArray($request)
     {
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'image' => $this->image,
+            'image' => $this->image ? asset('uploads/dishes/' . $this->image) : null,
             'description' => $this->description,
             'price' => $this->price,
             'calories' => $this->calories,
@@ -30,13 +31,13 @@ class DishResource extends JsonResource
             'category' => [
                 'id' => $this->category->id,
                 'name' => $this->category->name,
-                'image' => $this->category->image,
+                'image' => $this->category->image ? asset('uploads/categories/' . $this->category->image) : null,
             ],
-            'ingredients' => $this->ingredients->map(function($ingredient){
+            'ingredients' => $this->ingredients->map(function($ingredient) {
                 return [
                     'id' => $ingredient->id,
                     'name' => $ingredient->name,
-                    'image' => $ingredient->image,
+                    'image' => $ingredient->image ? asset('uploads/ingredients/' . $ingredient->image) : null,
                 ];
             }),
         ];

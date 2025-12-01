@@ -26,7 +26,10 @@ class CategoryController extends Controller
     public function store(CategoryRequest $request)
     {
         $category = $this->service->create($request->validated());
-        return new CategoryResource($category);
+          return new CategoryResource($category);
+    return response()->json([
+        'message' => 'Category added successfully',
+    ], 201); // 201 = Created
     }
        public function update(CategoryRequest $request, Category $category)
     {

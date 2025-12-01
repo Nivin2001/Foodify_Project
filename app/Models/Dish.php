@@ -27,8 +27,6 @@ class Dish extends Model
     {
         return $this->belongsTo(Category::class);
     }
-
-    // العلاقة مع المكونات
     public function ingredients()
     {
         return $this->hasMany(Ingredient::class);
