@@ -60,6 +60,7 @@ class PaymentService
         }
         $payment->payment_status = 'paid';
         $payment->save();
+        
         $order = $payment->order;
         $order->status = 'paid';
         $order->save();

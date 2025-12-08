@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\API\Order;
 
 use App\Http\Controllers\Controller;
@@ -15,6 +16,13 @@ class OrderController extends Controller
         $this->service = $service;
     }
 
+    public function myOrders(OrderService $service)
+    {
+        $orders = $service->getUserOrders(auth()->id());
+        return OrderResource::collection($orders);
+    }
+
+
     public function store(Request $request)
     {
         $order = $this->service->createOrder($request->user()->id);
@@ -26,5 +34,3 @@ class OrderController extends Controller
         return new OrderResource($order);
     }
 }
-
-

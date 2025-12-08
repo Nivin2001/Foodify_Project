@@ -7,6 +7,15 @@ use App\Models\CartItem;
 
 class OrderRepository
 {
+  public function getUserOrders($userId)
+{
+    // ترتيب حسب العمود created_at تنازليًا (الأحدث أول)
+    return Order::where('user_id', $userId)
+                ->orderBy('created_at', 'desc')
+                ->get();
+}
+
+
     public function createOrder(int $userId)
     {
         $cartItems = CartItem::with('dish')->where('user_id', $userId)->get();

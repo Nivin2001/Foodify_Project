@@ -12,6 +12,11 @@ class OrderService
         $this->repo = $repo;
     }
 
+    public function getUserOrders($userId)
+    {
+        return $this->repo->getUserOrders($userId);
+    }
+
     public function createOrder(int $userId)
     {
         return $this->repo->createOrder($userId);
