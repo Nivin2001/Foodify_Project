@@ -8,6 +8,8 @@ use App\Http\Controllers\API\Cart\CartController;
 use App\Http\Controllers\API\Category\CategoryController;
 use App\Http\Controllers\API\Dish\DishController;
 use App\Http\Controllers\Api\Favorite\FavoriteController;
+use App\Http\Controllers\API\Order\OrderController;
+use App\Http\Controllers\API\Payment\PaymentController;
 
 // Public Routes
 Route::post('register', [AuthController::class, 'register']);
@@ -38,6 +40,14 @@ Route::middleware('auth:sanctum')->group(function() {
     Route::patch('cart/{cartItem}', [CartController::class, 'update']);
     Route::delete('cart/{cartItem}', [CartController::class, 'destroy']);
     Route::delete('cart', [CartController::class, 'clear']); // مسح كل العناصر
+    Route::post('orders', [OrderController::class, 'store']);
+
+// إنشاء الدفع وإرجاع client_secret للموبايل
+Route::post('payment/pay', [PaymentController::class, 'pay']);
+
+// تأكيد الدفع بعد أن الموبايل يكمل الدفع
+Route::post('payment/confirm', [PaymentController::class, 'confirmPayment']);
+
 
 ;
     Route::get('profile', [AuthController::class, 'profile']);
