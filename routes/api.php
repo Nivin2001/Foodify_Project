@@ -8,6 +8,7 @@ use App\Http\Controllers\API\Cart\CartController;
 use App\Http\Controllers\API\Category\CategoryController;
 use App\Http\Controllers\API\Dish\DishController;
 use App\Http\Controllers\Api\Favorite\FavoriteController;
+use App\Http\Controllers\API\Notification\NotificationController;
 use App\Http\Controllers\API\Order\OrderController;
 use App\Http\Controllers\API\Payment\PaymentController;
 use App\Http\Controllers\API\User\UserController;
@@ -45,9 +46,10 @@ Route::middleware('auth:sanctum')->group(function() {
     Route::get('my-orders', [OrderController::class,'myOrders']);
     Route::post('payment/pay', [PaymentController::class, 'pay']);
     Route::post('payment/confirm', [PaymentController::class, 'confirmPayment']);
-
     Route::get('profile', [UserController::class, 'profile']);
     Route::post('profile', [UserController::class, 'update']);
+    Route::get('notifications', [NotificationController::class,'index']);
+    Route::post('notifications/{id}/read', [NotificationController::class,'markAsRead']);
 
     // Route::get('profile', [AuthController::class, 'profile']);
     Route::post('logout', [AuthController::class, 'logout']);

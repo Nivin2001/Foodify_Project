@@ -16,37 +16,38 @@ class PaymentController extends Controller
     /**
      * إنشاء عملية دفع جديدة
      */
-   public function pay(PaymentRequest $request)
-{
-    $order = Order::findOrFail($request->order_id);
+    public function pay(PaymentRequest $request)
+    {
+        $order = Order::findOrFail($request->order_id);
 
-    if ($order->status === 'paid') {
+        if ($order->status === 'paid') {
+            return response()->json([
+                'message' => 'This order is already paid.',
+            ], 400);
+        }
+        $paymentIntent = $this->service->payWithStripe($order);
+
+        $payment = $order->payments()
+            ->where('transaction_id', $paymentIntent->id)
+            ->first();
+
         return response()->json([
-            'message' => 'This order is already paid.',
-        ], 400);
+            'message' => 'Payment initiated successfully',
+            'payment' => new PaymentResource($payment),
+            'client_secret' => $paymentIntent->client_secret,
+        ]);
     }
-    $paymentIntent = $this->service->payWithStripe($order);
-
-    $payment = $order->payments()
-        ->where('transaction_id', $paymentIntent->id)
-        ->first();
-
-    return response()->json([
-        'message' => 'Payment initiated successfully',
-        'payment' => new PaymentResource($payment),
-        'client_secret' => $paymentIntent->client_secret,
-    ]);
-}
 
     /**
      * تأكيد الدفع
      */
+
     public function confirmPayment(Request $request)
     {
         $request->validate([
             'transaction_id' => 'required|string',
         ]);
-        
+
         $payment = $this->service->confirmStripePayment($request->transaction_id);
 
         if (!$payment) {
@@ -55,9 +56,21 @@ class PaymentController extends Controller
             ], 404);
         }
 
+        $order = $payment->order;
+        $user = $order->user;
+
+        $notificationMessage = "Your payment for order #{$order->id} was successful.";
+        if ($user) {
+            $user->notify(new \App\Notifications\OrderNotification($order, $notificationMessage));
+        }
         return response()->json([
             'message' => 'Payment confirmed successfully',
-            'data'    => new PaymentResource($payment),
+            'data'    => new \App\Http\Resources\PaymentResource($payment),
+
+            'notification' => [
+                'order_id' => $order->id,
+                'message'  => $notificationMessage,
+            ],
         ]);
     }
 }

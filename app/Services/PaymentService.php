@@ -6,6 +6,7 @@ use App\Repositories\PaymentRepository;
 use Stripe\Stripe;
 use Stripe\PaymentIntent;
 use App\Models\Payment;
+use App\Notifications\OrderNotification;
 
 class PaymentService
 {
@@ -60,7 +61,7 @@ class PaymentService
         }
         $payment->payment_status = 'paid';
         $payment->save();
-        
+
         $order = $payment->order;
         $order->status = 'paid';
         $order->save();

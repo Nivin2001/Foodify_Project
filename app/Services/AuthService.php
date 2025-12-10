@@ -86,7 +86,7 @@ class AuthService
 
     public function profile($user)
     {
-        return $user; 
+        return $user;
     }
 
     public function logout($user)
