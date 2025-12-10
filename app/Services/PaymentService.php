@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\PaymentCompleted;
 use App\Repositories\PaymentRepository;
 use Stripe\Stripe;
 use Stripe\PaymentIntent;
@@ -65,6 +66,9 @@ class PaymentService
         $order = $payment->order;
         $order->status = 'paid';
         $order->save();
+
+        // رفع Event بعد الدفع
+        event(new PaymentCompleted($payment));
 
         return $payment;
     }

@@ -23,7 +23,7 @@ class OrderController extends Controller
         $orders = $service->getUserOrders(auth()->id());
         return OrderResource::collection($orders);
     }
-
+    // evene,listener
 
     public function store(Request $request)
     {
@@ -32,18 +32,40 @@ class OrderController extends Controller
         if (!$order) {
             return response()->json(['message' => 'Cart is empty'], 400);
         }
-        $request->user()->notify(
-            new OrderNotification($order, 'Your order has been placed successfully!')
-        );
 
-        $notifications = NotificationResource::collection(
-            $request->user()->notifications()->latest()->take(5)->get()
-        );
+        event(new \App\Events\OrderPlaced($order));
 
-
+        $notificationMessage = 'Your order has been placed successfully!';
+        
         return response()->json([
-            'order' => new OrderResource($order),
-            'notifications' => $notifications
+            'order' => new \App\Http\Resources\OrderResource($order),
+            'notification' => [
+                'order_id' => $order->id,
+                'message'  => $notificationMessage,
+            ],
         ]);
     }
+
+
+    // public function store(Request $request)
+    // {
+    //     $order = $this->service->createOrder($request->user()->id);
+
+    //     if (!$order) {
+    //         return response()->json(['message' => 'Cart is empty'], 400);
+    //     }
+    //     $request->user()->notify(
+    //         new OrderNotification($order, 'Your order has been placed successfully!')
+    //     );
+
+    //     $notifications = NotificationResource::collection(
+    //         $request->user()->notifications()->latest()->take(5)->get()
+    //     );
+
+
+    //     return response()->json([
+    //         'order' => new OrderResource($order),
+    //         'notifications' => $notifications
+    //     ]);
+    // }
 }
