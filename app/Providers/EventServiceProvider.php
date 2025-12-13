@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Events\OrderPlaced;
+use App\Events\PaymentCompleted;
 use App\Listeners\SendOrderNotification;
+use App\Listeners\SendPaymentNotification;
 use Illuminate\Support\ServiceProvider;
 
 class EventServiceProvider extends ServiceProvider
@@ -12,7 +14,7 @@ class EventServiceProvider extends ServiceProvider
         OrderPlaced::class => [
             SendOrderNotification::class,
         ],
-        PaymentConfirmed::class => [
+        PaymentCompleted::class => [
             SendPaymentNotification::class,
         ],
     ];

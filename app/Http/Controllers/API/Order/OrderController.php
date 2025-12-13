@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API\Order;
 
+use App\Events\OrderPlaced;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\NotificationResource;
 use App\Http\Resources\OrderResource;
@@ -26,27 +27,31 @@ class OrderController extends Controller
     // evene,listener
 
     public function store(Request $request)
-    {
-        $order = $this->service->createOrder($request->user()->id);
+{
+    $order = $this->service->createOrder($request->user()->id);
 
-        if (!$order) {
-            return response()->json(['message' => 'Cart is empty'], 400);
-        }
-
-        event(new \App\Events\OrderPlaced($order));
-
-        $notificationMessage = 'Your order has been placed successfully!';
-        
-        return response()->json([
-            'order' => new \App\Http\Resources\OrderResource($order),
-            'notification' => [
-                'order_id' => $order->id,
-                'message'  => $notificationMessage,
-            ],
-        ]);
+    if (!$order) {
+        return response()->json(['message' => 'Cart is empty'], 400);
     }
 
+    event(new OrderPlaced($order, "Your order #{$order->id} has been placed successfully!"));
 
+         return response()->json([
+        'order' => $order,
+        'message' => 'Order placed and notification sent!',
+    ]);
+
+     // return response()->json([
+        //     'order' => new \App\Http\Resources\OrderResource($order),
+        //     'notification' => [
+        //         'order_id' => $order->id,
+        //      'message' => 'Order placed and notification sent!',
+        //     ],
+        // ]);
+}
+
+
+// without notification
     // public function store(Request $request)
     // {
     //     $order = $this->service->createOrder($request->user()->id);
@@ -69,3 +74,4 @@ class OrderController extends Controller
     //     ]);
     // }
 }
+

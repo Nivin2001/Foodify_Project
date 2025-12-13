@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\ServiceProvider;
+use Stripe\Stripe;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -17,8 +19,11 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void
-    {
-        //
-    }
+  public function boot()
+{
+    Broadcast::routes(['middleware' => ['auth:sanctum']]);
+    require base_path('routes/channels.php');
+    Stripe::setApiKey(env('STRIPE_SECRET'));
+
+}
 }

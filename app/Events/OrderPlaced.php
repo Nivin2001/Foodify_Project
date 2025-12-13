@@ -3,37 +3,36 @@
 namespace App\Events;
 
 use App\Models\Order;
-use Illuminate\Broadcasting\Channel;
-use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class OrderPlaced
+class OrderPlaced implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    /**
-     * Create a new event instance.
-     */
-   public $order;
+    public $orderId;
+    public $message;
+    public $userId;
 
-    public function __construct(Order $order)
+    public function __construct(Order $order, string $message)
     {
-        $this->order = $order;
+        $this->orderId = $order->id;
+        $this->message = $message;
+        $this->userId = $order->user_id; 
     }
-
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return array<int, \Illuminate\Broadcasting\Channel>
-     */
-    public function broadcastOn(): array
+    public function broadcastOn(): PrivateChannel
+    {
+        return new PrivateChannel('users.' . $this->userId);
+    }
+    public function broadcastWith(): array
     {
         return [
-            new PrivateChannel('channel-name'),
+            'order_id' => $this->orderId,
+            'message' => $this->message,
         ];
     }
 }

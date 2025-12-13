@@ -20,12 +20,15 @@ class SendOrderNotification
     /**
      * Handle the event.
      */
-    public function handle(OrderPlaced $event)
+   public function handle(OrderPlaced $event)
     {
-        $user = $event->order->user; // جلب المستخدم صاحب الطلب
-        $user->notify(new OrderNotification(
-            $event->order,
-            "Your order #{$event->order->id} has been placed successfully!"
-        ));
+        $user = \App\Models\User::find($event->userId);
+
+        if ($user) {
+            $user->notify(new OrderNotification(
+                $event->orderId,
+                $event->message
+            ));
+        }
     }
 }
